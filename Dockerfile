@@ -21,11 +21,11 @@ RUN curl -sS https://getcomposer.org/installer | php \
 # 5️⃣ Copy composer files first (for caching)
 COPY composer.json composer.lock ./
 
-# 6️⃣ Copy .env.example as .env to prevent artisan errors during composer install
+# 6️⃣ Copy .env.example as .env to prevent artisan errors
 COPY .env.example .env
 
-# 7️⃣ Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# 7️⃣ Install PHP dependencies WITHOUT running scripts
+RUN composer install --no-dev --no-scripts --optimize-autoloader
 
 # 8️⃣ Copy the rest of the application
 COPY . .
@@ -34,8 +34,14 @@ COPY . .
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# 🔟 Expose port 8000
+# 🔟 Run Laravel scripts manually to avoid errors during build
+RUN php artisan config:clear || true
+RUN php artisan route:clear || true
+RUN php artisan view:clear || true
+RUN php artisan key:generate --force
+
+# 1️⃣1️⃣ Expose port 8000
 EXPOSE 8000
 
-# 1️⃣1️⃣ Set Laravel start command
+# 1️⃣2️⃣ Set Laravel start command
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
