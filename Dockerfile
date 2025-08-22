@@ -8,18 +8,17 @@ WORKDIR /var/www/html
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
-    libpq-dev \
     libzip-dev \
     curl \
     zip \
-    && docker-php-ext-install pdo pdo_pgsql zip
+    && docker-php-ext-install pdo pdo_mysql zip
 
 # 4️⃣ Install Composer
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
 # 5️⃣ Copy composer files first (for caching)
-COPY composer.json composer.lock ./
+COPY composer.json composer.lock ./ 
 
 # 6️⃣ Copy .env.example as .env to prevent artisan errors
 COPY .env.example .env
