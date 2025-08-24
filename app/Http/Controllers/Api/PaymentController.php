@@ -25,12 +25,15 @@ class PaymentController extends Controller
             'note'     => 'nullable|string', // optional note
         ]);
 
-        // create payment (without transaction_id)
+        // Generate a unique transaction ID
+        $transactionId = 'TXN-' . strtoupper(uniqid());
+
         $payment = Payment::create([
             'store_id' => $request->store_id,
             'amount'   => $request->amount ?? null,
             'note'     => $request->note ?? null,
-            'status'   => 'paid', // optional, if you have a status column
+            'status'   => 'paid',
+            'transaction_id' => $transactionId,
         ]);
 
         // update store status
@@ -43,4 +46,23 @@ class PaymentController extends Controller
             'store'   => $store,
         ]);
     }
+
+    // update note
+    public function updateNote(Request $request, $id)
+{
+    $request->validate([
+        'note' => 'nullable|string|max:500',
+    ]);
+
+    $payment = Payment::find($id);
+    if (!$payment) {
+        return response()->json(['message' => 'Payment not found'], 404);
+    }
+
+    $payment->note = $request->note;
+    $payment->save();
+
+    return response()->json(['message' => 'Note updated successfully', 'note' => $payment->note]);
+}
+
 }

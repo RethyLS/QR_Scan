@@ -14,10 +14,14 @@ Route::middleware([\App\Http\Middleware\CorsMiddleware::class])->group(function(
     Route::post('/stores', [StoreController::class, 'store']);
     Route::put('/stores/{id}', [StoreController::class, 'update']);
     Route::delete('/stores/{id}', [StoreController::class, 'destroy']);
+    Route::get('/stores/by-date', [StoreController::class, 'byDate']);
 
     // Payments
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::post('/payments/mark-paid', [PaymentController::class, 'markPaid']);
+    // Update payment note
+    Route::put('/payments/{id}/note', [PaymentController::class, 'updateNote']);
+
 
     // Reports
     Route::get('/reports', function(Request $request) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Store;
 use App\Models\Payment;
+use Carbon\Carbon;
 
 class StoreController extends Controller
 {
@@ -85,7 +86,7 @@ class StoreController extends Controller
             'store_id' => $request->store_id,
             'amount'   => $request->amount,
             'note'     => $request->note ?? null,
-            'status'   => 'paid', // optional if you have a status column in payments
+            'status'   => 'paid',
         ]);
 
         $store = Store::find($request->store_id);
@@ -97,4 +98,42 @@ class StoreController extends Controller
             'store'   => $store,
         ]);
     }
+
+    // For note
+    public function byDate(Request $request)
+{
+    $date = $request->query('date'); // expected format: YYYY-MM-DD
+    $day  = $date ? Carbon::parse($date)->toDateString() : Carbon::today()->toDateString();
+
+    // Load only payments that happened on that date
+    $stores = Store::with(['payments' => function ($q) use ($day) {
+        $q->whereDate('created_at', $day)->orderByDesc('created_at');
+    }])->get();
+
+    // Return the SAME JSON shape your Flutter expects (has latest_payment)
+    $payload = $stores->map(function ($s) {
+        $p = $s->payments->first(); // payment for that date (or null)
+
+        return [
+            'id'             => $s->id,
+            'stall_id'       => $s->stall_id,
+            'name'           => $s->name,
+            'owner'          => $s->owner,
+            'group'          => $s->group,
+            'default_amount' => (float) $s->default_amount,
+            'status'         => $s->status,
+            'latest_payment' => $p ? [
+                'id'             => $p->id,
+                'amount'         => (float) $p->amount,
+                'note'           => $p->note,
+                'created_at'     => optional($p->created_at)->toISOString(),
+                'transaction_id' => $p->transaction_id,
+            ] : null,
+        ];
+    });
+
+    return response()->json(['stores' => $payload]);
 }
+
+}
+
