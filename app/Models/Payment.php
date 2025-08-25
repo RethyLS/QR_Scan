@@ -14,7 +14,9 @@ class Payment extends Model
         'amount',
         'note',
         'status',
-        'transaction_id', // added status column
+        'transaction_id',
+        'created_at',
+        'updated_at',
     ];
 
     // Default value for status when creating a new payment

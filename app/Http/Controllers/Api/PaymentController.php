@@ -19,37 +19,38 @@ class PaymentController extends Controller
     // Create payment and mark store as paid
     public function markPaid(Request $request)
     {
-        $request->validate([
-            'store_id' => 'required|exists:stores,id',
-            'amount'   => 'nullable|numeric',
-            'note'     => 'nullable|string', // optional note
-        ]);
+    $request->validate([
+        'store_id'   => 'required|exists:stores,id',
+        'amount'     => 'nullable|numeric',
+        'note'       => 'nullable|string',
+        'created_at' => 'nullable|date', // selected date
+    ]);
 
-        // Generate a unique transaction ID
-        $transactionId = 'TXN-' . strtoupper(uniqid());
+    $transactionId = 'TXN-' . strtoupper(uniqid());
+    $createdAt = $request->created_at ? $request->created_at : now();
+    $payment = Payment::create([
+        'store_id'       => $request->store_id,
+        'amount'         => $request->amount ?? null,
+        'note'           => $request->note ?? null,
+        'status'         => 'paid',
+        'transaction_id' => $transactionId,
+        'created_at'    => $createdAt,
+        // 'updated_at'    => $createdAt,
+    ]);
 
-        $payment = Payment::create([
-            'store_id' => $request->store_id,
-            'amount'   => $request->amount ?? null,
-            'note'     => $request->note ?? null,
-            'status'   => 'paid',
-            'transaction_id' => $transactionId,
-        ]);
+    // No more updating store status, reports will use payments table
 
-        // update store status
-        $store = Store::find($request->store_id);
-        $store->update(['status' => 'paid']);
-
-        return response()->json([
-            'success' => true,
-            'payment' => $payment,
-            'store'   => $store,
-        ]);
+    return response()->json([
+        'success' => true,
+        'payment' => $payment,
+    ]);
     }
+
+
 
     // update note
     public function updateNote(Request $request, $id)
-{
+    {
     $request->validate([
         'note' => 'nullable|string|max:500',
     ]);
@@ -63,6 +64,6 @@ class PaymentController extends Controller
     $payment->save();
 
     return response()->json(['message' => 'Note updated successfully', 'note' => $payment->note]);
-}
+    }
 
 }
